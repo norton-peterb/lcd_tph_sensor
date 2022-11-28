@@ -9,14 +9,18 @@
 #define PR_DIO 6
 #define HU_CLK 7
 #define HU_DIO 8
+#define AG_CLK 9
+#define AG_DIO 10
 
 float temperature = 0.0f;
 float pressure = 0.0f;
 float humidity = 0.0f;
+uint16_t gas = 0;
 
 TM1637Display lcd = TM1637Display(TM_CLK,TM_DIO);
 TM1637Display lcd_press = TM1637Display(PR_CLK,PR_DIO);
 TM1637Display lcd_hum = TM1637Display(HU_CLK,HU_DIO);
+TM1637Display lcd_gas = TM1637Display(AG_CLK,AG_DIO);
 Adafruit_BME280 bme;
 bool status;
 
@@ -46,11 +50,14 @@ void setup() {
   lcd_press.clear();
   lcd_hum.setBrightness(3);
   lcd_hum.clear();
-  status = bme.begin();  
+  lcd_gas.setBrightness(3);
+  lcd_gas.clear();
+  status = bme.begin(0x76);  
   if (!status) {
     lcd.setSegments(error,3,0);
     lcd_press.setSegments(error,3,0);
     lcd_hum.setSegments(error,3,0);
+    lcd_gas.setSegments(error,3,0);
   }
 }
 
@@ -67,6 +74,9 @@ void loop() {
     lcd_hum.clear();
     lcd_hum.showNumberDec((int)humidity,false,2,0);
     lcd_hum.setSegments(percent,2,2);
+    gas = analogRead(A0);
+    lcd_gas.clear();
+    lcd_gas.showNumberDec(gas,true,4,0);
   }
   delay(30000);
 }
