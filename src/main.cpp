@@ -67,13 +67,15 @@ void setup() {
 void sendData() {
   Wire.beginTransmission(0x04);
   dtostrf(temperature,-1,1,valBuffer);
-  sprintf(buffer,"TMP|%s\n",valBuffer);
+  sprintf(buffer,"T|%s\n",valBuffer);
   Wire.write(buffer);
   dtostrf(pressure,-1,1,valBuffer);
-  sprintf(buffer,"PRS|%s\n",valBuffer);
+  sprintf(buffer,"P|%s\n",valBuffer);
   Wire.write(buffer);
   dtostrf(humidity,-1,1,valBuffer);
-  sprintf(buffer,"HUM|%s\n",valBuffer);
+  sprintf(buffer,"H|%s\n",valBuffer);
+  Wire.write(buffer);
+  sprintf(buffer,"A|%d\n",gas);
   Wire.write(buffer);
   Wire.endTransmission();
 }
