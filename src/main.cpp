@@ -16,7 +16,9 @@
 float temperature = 0.0f;
 float pressure = 0.0f;
 float humidity = 0.0f;
-uint16_t gas = 0;
+uint16_t gasMovingAvArray[16];
+uint8_t gasMovingAvArrayIndex = 0;
+bool gasMovingAvArrayStart = false;
 
 TM1637Display lcd = TM1637Display(TM_CLK,TM_DIO);
 TM1637Display lcd_press = TM1637Display(PR_CLK,PR_DIO);
@@ -45,6 +47,31 @@ const uint8_t error[] = {
   SEG_E | SEG_G,
   SEG_E | SEG_G
 };
+
+void submitGasToArray(uint16_t gas) {
+  if(gasMovingAvArrayStart) {
+      gasMovingAvArray[gasMovingAvArrayIndex] = gas;
+      if(gasMovingAvArrayIndex == 15) {
+        gasMovingAvArrayIndex = 0;
+      } else {
+        gasMovingAvArrayIndex++;
+      }
+      gasMovingAvArrayStart = false;
+  } else {
+    for(int i = 0 ; i < 16 ; i++) {
+      gasMovingAvArray[i] = gas;
+    }
+  }
+}
+
+uint16_t getMovingAverageGas() {
+  uint16_t gasAverage = 0;
+  for(int i = 0 ; i < 16 ; i++) {
+    gasAverage += gasMovingAvArray[i];
+  }
+  gasAverage = gasAverage >> 4;
+  return gasAverage;
+}
 
 void setup() {
   lcd.setBrightness(3);
@@ -75,7 +102,7 @@ void sendData() {
   dtostrf(humidity,-1,1,valBuffer);
   sprintf(buffer,"H|%s\n",valBuffer);
   Wire.write(buffer);
-  sprintf(buffer,"A|%d\n",gas);
+  sprintf(buffer,"A|%d\n",getMovingAverageGas());
   Wire.write(buffer);
   Wire.endTransmission();
 }
@@ -93,9 +120,9 @@ void loop() {
     lcd_hum.clear();
     lcd_hum.showNumberDec((int)humidity,false,2,0);
     lcd_hum.setSegments(percent,2,2);
-    gas = analogRead(A0);
+    submitGasToArray(analogRead(0));
     lcd_gas.clear();
-    lcd_gas.showNumberDec(gas,true,4,0);
+    lcd_gas.showNumberDec(getMovingAverageGas(),true,4,0);
     sendData();
   }
   delay(30000);
