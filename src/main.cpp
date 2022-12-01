@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include "TM1637Display.h"
 #include "Adafruit_Sensor.h"
 #include "Adafruit_BME280.h"
@@ -23,6 +24,8 @@ TM1637Display lcd_hum = TM1637Display(HU_CLK,HU_DIO);
 TM1637Display lcd_gas = TM1637Display(AG_CLK,AG_DIO);
 Adafruit_BME280 bme;
 bool status;
+char buffer[32];
+char valBuffer[8];
 
 const uint8_t celsius[] = {
   SEG_A | SEG_B | SEG_F | SEG_G,  // Degree symbol
@@ -61,6 +64,22 @@ void setup() {
   }
 }
 
+void sendData() {
+  Wire.beginTransmission(0x04);
+  dtostrf(temperature,-1,1,valBuffer);
+  sprintf(buffer,"T|%s\n",valBuffer);
+  Wire.write(buffer);
+  dtostrf(pressure,-1,1,valBuffer);
+  sprintf(buffer,"P|%s\n",valBuffer);
+  Wire.write(buffer);
+  dtostrf(humidity,-1,1,valBuffer);
+  sprintf(buffer,"H|%s\n",valBuffer);
+  Wire.write(buffer);
+  sprintf(buffer,"A|%d\n",gas);
+  Wire.write(buffer);
+  Wire.endTransmission();
+}
+
 void loop() {
   if(status) {
     temperature = bme.readTemperature();
@@ -77,6 +96,7 @@ void loop() {
     gas = analogRead(A0);
     lcd_gas.clear();
     lcd_gas.showNumberDec(gas,true,4,0);
+    sendData();
   }
   delay(30000);
 }
